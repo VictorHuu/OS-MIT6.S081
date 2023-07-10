@@ -43,20 +43,14 @@ proc_mapstacks(pagetable_t kpgtbl)
   }
 }
 //collect the amounts of unused processes
-int 
-collect_up(void){
-	int total=0;
+void
+collect_up(uint64* total){
+	*total=0;
 	struct proc*p;
 	for(p=proc;p<&proc[NPROC];p++){
-		if(p->state==UNUSED)
-			total++;
+		if(p->state!=UNUSED)
+			(*total)++;
 	}
-	return total;
-}
-int sysinfo(struct sysinfo* so){
-	so->freemem=collect_fm();
-	so->nproc=collect_up();
-	return 1;
 }
 // initialize the proc table.
 void

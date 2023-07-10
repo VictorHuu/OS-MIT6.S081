@@ -6,8 +6,6 @@
 #include "spinlock.h"
 #include "proc.h"
 #include"sysinfo.h"
-int
-get_info(uint64 addr,struct sysinfo * so);
 uint64
 sys_exit(void)
 {
@@ -20,11 +18,13 @@ uint64
 sys_sysinfo(void){
 	uint64 si;//user pointer for sysinfo
 	argaddr(0, &si);
-	printf("the address of users' sysinfo:%d\n",&si);
-	struct sysinfo* so=(struct sysinfo*)(&si);
-	sysinfo(so);
-	printf("%d %d\n",so->freemem,so->nproc);
-		return get_info(si,so);
+	printf("the address of users' sysinfo:%d\n",si);
+	struct sysinfo so;
+	collect_up(&so.nproc);
+	collect_fm(&so.freemem);
+	printf("%d %d\n",so.freemem,so.nproc);
+	if(copyout(myproc()->pagetable,si,(char*)&so,sizeof so)<0)
+		return -1;
 	return 0;
 }
 uint64 sys_trace(void){
@@ -33,14 +33,6 @@ uint64 sys_trace(void){
 	struct proc*p=myproc();
 	p->mask=mask;
 	return 0;
-}
-int
-get_info(uint64 addr,struct sysinfo * so)
-{
-	struct proc *p = myproc();
-  if(copyout(p->pagetable, addr, (char *)&so, sizeof(so)) < 0)
-      return -1;
-    return 0;
 }
 uint64
 sys_getpid(void)
