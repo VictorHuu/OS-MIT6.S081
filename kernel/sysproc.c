@@ -5,7 +5,9 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
-
+#include"sysinfo.h"
+int
+get_info(uint64 addr,struct sysinfo * so);
 uint64
 sys_exit(void)
 {
@@ -14,7 +16,32 @@ sys_exit(void)
   exit(n);
   return 0;  // not reached
 }
-
+uint64
+sys_sysinfo(void){
+	uint64 si;//user pointer for sysinfo
+	argaddr(0, &si);
+	printf("the address of users' sysinfo:%d\n",&si);
+	struct sysinfo* so=(struct sysinfo*)(&si);
+	sysinfo(so);
+	printf("%d %d\n",so->freemem,so->nproc);
+		return get_info(si,so);
+	return 0;
+}
+uint64 sys_trace(void){
+	int mask;
+	argint(0,&mask);  
+	struct proc*p=myproc();
+	p->mask=mask;
+	return 0;
+}
+int
+get_info(uint64 addr,struct sysinfo * so)
+{
+	struct proc *p = myproc();
+  if(copyout(p->pagetable, addr, (char *)&so, sizeof(so)) < 0)
+      return -1;
+    return 0;
+}
 uint64
 sys_getpid(void)
 {

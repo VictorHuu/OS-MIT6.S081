@@ -5,7 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
-
+#include"sysinfo.h"
 struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
@@ -42,7 +42,22 @@ proc_mapstacks(pagetable_t kpgtbl)
     kvmmap(kpgtbl, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
   }
 }
-
+//collect the amounts of unused processes
+int 
+collect_up(void){
+	int total=0;
+	struct proc*p;
+	for(p=proc;p<&proc[NPROC];p++){
+		if(p->state==UNUSED)
+			total++;
+	}
+	return total;
+}
+int sysinfo(struct sysinfo* so){
+	so->freemem=collect_fm();
+	so->nproc=collect_up();
+	return 1;
+}
 // initialize the proc table.
 void
 procinit(void)
@@ -295,7 +310,7 @@ fork(void)
     return -1;
   }
   np->sz = p->sz;
-
+  np->mask=p->mask;
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
 

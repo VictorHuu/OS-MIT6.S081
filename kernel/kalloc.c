@@ -61,7 +61,16 @@ kfree(void *pa)
   kmem.freelist = r;
   release(&kmem.lock);
 }
-
+//collect the total bytes of the free memory
+int
+collect_fm(void){
+	int total=0;
+	struct run* r=kmem.freelist;
+	for(;r;r=r->next){
+		total+=PGSIZE;
+	}
+	return total;
+}
 // Allocate one 4096-byte page of physical memory.
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
