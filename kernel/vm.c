@@ -5,7 +5,8 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
-
+#include "spinlock.h" 
+#include "proc.h"
 /*
  * the kernel's page table.
  */
@@ -55,7 +56,32 @@ kvminithart()
   w_satp(MAKE_SATP(kernel_pagetable));
   sfence_vma();
 }
-
+// Just follow the kvmmap on vm.c
+void
+uvmmap(pagetable_t pagetable, uint64 va, uint64 pa, uint64 sz, int perm)
+{
+  if(mappages(pagetable, va, sz, pa, perm) != 0)
+    panic("uvmmap");
+}
+void
+proc_inithart(pagetable_t kpt){
+  w_satp(MAKE_SATP(kpt));
+  sfence_vma();
+}
+// Create a kernel page table for the process
+pagetable_t
+proc_kpt_init(){
+  pagetable_t kernelpt = uvmcreate();
+  if (kernelpt == 0) return 0;
+  uvmmap(kernelpt, UART0, UART0, PGSIZE, PTE_R | PTE_W);
+  uvmmap(kernelpt, VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W);
+  uvmmap(kernelpt, CLINT, CLINT, 0x10000, PTE_R | PTE_W);
+  uvmmap(kernelpt, PLIC, PLIC, 0x400000, PTE_R | PTE_W);
+  uvmmap(kernelpt, KERNBASE, KERNBASE, (uint64)etext-KERNBASE, PTE_R | PTE_X);
+  uvmmap(kernelpt, (uint64)etext, (uint64)etext, PHYSTOP-(uint64)etext, PTE_R | PTE_W);
+  uvmmap(kernelpt, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
+  return kernelpt;
+}
 // Return the address of the PTE in page table pagetable
 // that corresponds to virtual address va.  If alloc!=0,
 // create any required page-table pages.
@@ -132,7 +158,7 @@ kvmpa(uint64 va)
   pte_t *pte;
   uint64 pa;
   
-  pte = walk(kernel_pagetable, va, 0);
+  pte = walk(myproc()->kernelpt, va, 0);
   if(pte == 0)
     panic("kvmpa");
   if((*pte & PTE_V) == 0)
@@ -140,7 +166,33 @@ kvmpa(uint64 va)
   pa = PTE2PA(*pte);
   return pa+off;
 }
+int depth=1;//the resursive call depth of the function
+//Lab pgbtl:
+void
+vmprint(pagetable_t pagetable){
+    
+    if(depth==1)
+    	printf("page table %p\n",pagetable);
+    for(int i = 0; i < 512; i++){
+    pte_t pte = pagetable[i];
+    if((pte & PTE_V) && (pte & (PTE_R|PTE_W|PTE_X)) == 0){
+      // this PTE points to a lower-level page table.
+      uint64 child = PTE2PA(pte);
+      if(depth==1)
+      	printf("..");
+      else if(depth==2)
+      	printf(".. ..");
+      printf("%d: pte %p pa %p\n",i,pte,child);
+      depth++;
+      vmprint((pagetable_t)child);
+      depth--;
+    } else if(pte & PTE_V){//the leaf page
+      uint64 child = PTE2PA(pte);
+      printf(".. .. ..%d: pte %p pa %p\n",i,pte,child);
+    }
+  }
 
+}
 // Create PTEs for virtual addresses starting at va that refer to
 // physical addresses starting at pa. va and size might not
 // be page-aligned. Returns 0 on success, -1 if walk() couldn't
