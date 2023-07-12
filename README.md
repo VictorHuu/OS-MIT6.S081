@@ -116,6 +116,7 @@ freeproc(struct proc *p)
 }
 ```
 > - You'll need a way to free a page table without also freeing the leaf physical memory pages.
+
 只需要稍微修改一下freewalk中的对应条件，比如只要是有效的页表项，那么都需要清除，只要是目录页表项，那么就需要递归。
 注意到freewalk的注释，在调用前需要清除全部的从页表项到物理页表指针的映射，否则会造成内存泄露！
 清除映射关系
@@ -145,4 +146,24 @@ proc_freekernelpt(pagetable_t kernelpt)
 }
 ```
 ## Simplify copyin/copyinstr (hard)
-TODO...
+首先在vm.c中增加一个pagetable到kernelpt的转换函数。
+该函数的原型如下
+```void u2kvmcopy(pagetable_t pagetable, pagetable_t kernelpt, uint64 oldsz, uint64 newsz)```
+其中oldsz与newsz表示需要映射的虚拟地址的区间。oldsz需要页向上对齐，采用PGGROUNDUP，是为了不破坏旧有的虚拟地址，
+for循环的终止条件其实就是newsz的向下页对齐。
+对于每一个页，根据页基址i获取旧有的pagetable页表项pte_from，分配并获取kernelpt的页表项pte_from，
+再用PTE2PA获得旧页表项的物理地址pa。根据提示
+> What permissions do the PTEs for user addresses need in a process's kernel page table? (A page with PTE_U set cannot be accessed in kernel mode.)
+
+PTE_U按位取反，然后与原有的权限位flags按位求和得到新的权限位，再与旧有的页表项按位求或即可得到新的页表项值（pte_from解引用后）。
+
+第二步，将copyin与copyinstr调用新的copyinste_new,copyin_new，还要在defs.h添加新的声明。
+
+第三步，将procinit，exec，sbrk中的growproc，fork中添加u2kvmcopy生成每个进程对应的内存页表。注意growproc会增长用户空间，
+但不能越过PLIC的位置，因此需要在growproc中增加
+```c
+if (PGROUNDUP(sz + n) >= PLIC){
+      return -1;
+    }
+```
+
