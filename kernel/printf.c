@@ -125,7 +125,15 @@ panic(char *s)
   for(;;)
     ;
 }
-
+void backtrace(void){
+	printf("backtrace:\n");
+	uint64 fp=r_fp();
+	while(PGROUNDUP(fp)-PGROUNDDOWN(fp)>0){
+		uint64* addr=(uint64*)(fp-8);
+		fp=*(uint64*)(fp-16);
+		printf("%p\n",*addr);
+	}
+}
 void
 printfinit(void)
 {
