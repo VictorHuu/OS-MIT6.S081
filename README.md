@@ -39,3 +39,24 @@ x=3 y=5213
 ```
 
 因为即使没有第三个参数，但在 printf 中 a2 寄存器被分配给 16(s0)，所以第二个变量 y 将是 trapframe->a2 。在这种情况下，它是 5213！
+## Backtrace (moderate)
+根据提示一二，先在defs.h中定义backtrace，在riscv.h中添加r_fp()的声明。
+当backtrace被调用时，可以通过r_fp()获得当前的pageframe，根据提示4来确定循环条件进行遍历，获得的framepage如果没有调用者，那么就没有fp，也就是说fp的大小为0,PGROUNDUP(fp)-PGROUNDDOWN(fp)=0,终止循环。
+根据提示3，地址位于当前帧页中偏移量为-8的地方，被调用者fp位于偏移量为-16的地方。
+```c
+void backtrace(void){
+	printf("backtrace:\n");
+	uint64 fp=r_fp();
+	while(PGROUNDUP(fp)-PGROUNDDOWN(fp)>0){
+		uint64* addr=(uint64*)(fp-8);
+		fp=*(uint64*)(fp-16);
+		printf("%p\n",*addr);
+	}
+}
+```
+运行结果如下：
+
+![4b1fa90c1d0a66bf22db79025d079366](https://github.com/VictorHuu/XV6LabTJ/assets/103842499/2d9d9f47-65ad-4e56-ad9e-205f370d30e8)
+
+![e5e3c763dabb0b852efb1fd8e4895ad6](https://github.com/VictorHuu/XV6LabTJ/assets/103842499/9b0844ac-c18b-4fe5-908e-4cc37d5db2a3)
+
