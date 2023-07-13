@@ -67,7 +67,27 @@ argint(int n, int *ip)
 int
 argaddr(int n, uint64 *ip)
 {
+  struct proc *p = myproc();
   *ip = argraw(n);
+  uint64 pa;
+  if(walkaddr(p->pagetable,*ip)==0){
+  	if(PGROUNDUP(p->trapframe->sp)-1<*ip&&p->sz>*ip){
+  		pa=(uint64)kalloc();
+  		if(pa==0){
+  			return -1;
+  		}else{
+  			memset((void*)pa,0,PGSIZE);
+  			*ip=PGROUNDDOWN(*ip);
+  			if(mappages(p->pagetable,*ip,PGSIZE,pa,PTE_W|PTE_U|PTE_R)!=0){
+  				kfree((void*)pa);
+  				p->killed=1;
+  			}
+  		}
+  		if(p->killed==1)
+  			return -1;
+  	}else
+  		return -1;
+  }
   return 0;
 }
 
