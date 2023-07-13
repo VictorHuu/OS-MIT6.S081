@@ -69,9 +69,9 @@ usertrap(void)
     // ok
   }else if(r_scause()==15||r_scause()==13){
   	uint64 va=r_stval();
-  	printf("page fault:%p\n",va);
+  	//printf("page fault:%p\n",va);
   	uint64 pa=(uint64)kalloc();
-  	if(pa==0){
+  	if(pa==0||va>myproc()->sz){
   		p->killed=1;
   	}else{
   		memset((void*)pa,0,PGSIZE);
