@@ -144,5 +144,6 @@ if(p->alarm_trapframe)
 其他新增变量设置为0就可以了。
 
 以下是实验结果：
+
 ![2df33296a0ca6236cdf12d7481a155e4](https://github.com/VictorHuu/XV6LabTJ/assets/103842499/ce6de1d9-0a5a-4872-99f9-b2149cfcedd1)
 
