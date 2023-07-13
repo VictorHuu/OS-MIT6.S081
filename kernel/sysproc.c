@@ -43,23 +43,18 @@ sys_sbrk(void)
 {
   int addr;
   int n;
-
+  struct proc*p=myproc();
   if(argint(0, &n) < 0)
     return -1;
-  addr = myproc()->sz;
+  addr = p->sz;
   if(n>=0)
-  	myproc()->sz+=n;
-  else if(addr+n>0&&growproc(n) < 0){
-    myproc()->sz+=n;
-    addr+=n;
-    return -1;
-  }else if(addr+n<0){
-        myproc()->sz=0;
-  	return 0;
-  }
+  	p->sz+=n;
+  else if(addr+n>0){
+    p->sz = uvmdealloc(p->pagetable, addr, addr + n);
+  }else
+  	return -1;
   return addr;
 }
-
 uint64
 sys_sleep(void)
 {
