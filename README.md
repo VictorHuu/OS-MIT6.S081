@@ -59,4 +59,90 @@ void backtrace(void){
 ![4b1fa90c1d0a66bf22db79025d079366](https://github.com/VictorHuu/XV6LabTJ/assets/103842499/2d9d9f47-65ad-4e56-ad9e-205f370d30e8)
 
 ![e5e3c763dabb0b852efb1fd8e4895ad6](https://github.com/VictorHuu/XV6LabTJ/assets/103842499/9b0844ac-c18b-4fe5-908e-4cc37d5db2a3)
+## Alarm(hard)
+### test0: invoke handler
+首先根据系统调用的经验，将必要的文件都配置好。
+
+在proc.h中，新声明了3个变量：
+```c
+typedef void(*AlarmFunc) (void);
+struct proc{
+  ...
+  int a_intvl;			//Alarm interval
+  AlarmFunc handler;		//Invoker Handler
+  int elapsed_ticks;		//number of ticks have passed since the last call
+}
+``` 
+用typedef定义函数指针方便之后的处理。
+然后是函数sys_sigalarm，从trapframe上面的ax等寄存器获取传输的变量，
+如果获取失败就返回-1，并赋给当前进程对应的proc的相应的值。
+```c
+uint64 sys_sigalarm(void){
+	int ticks;
+	uint64 fn;
+	struct proc* p=myproc();
+	if(argint(0,&ticks)<0)
+		return -1;
+	if(argaddr(1,&fn)<0)
+		return -1;
+	p->a_intvl=ticks;
+	p->handler=(AlarmFunc)fn;
+	return 0;
+}
+```
+在usertrap函数中，当which_dev==2，表示发生了时钟中断的时候开始进行处理
+```c
+  if(which_dev == 2){
+    p->elapsed_ticks++;
+    if(p->elapsed_ticks>p->a_intvl&&p->a_intvl>0){
+        p->trapframe->epc=(uint64)p->handler;
+    	p->elapsed_ticks=0;
+    }
+```
+将epc即用户空间的PC值设置为处理函数，那么当从内核态返回用户态时将会执行相对应的函数。
+
+![ea5431be62fd3fc602ea4c46529ba0c2](https://github.com/VictorHuu/XV6LabTJ/assets/103842499/eccde6b1-954b-4353-9831-4970805c4f30)
+
+第一个实验测试通过
+### test1/test2(): resume interrupted code
+- 这个实验最重要的是需要存储非常多寄存器，一般寄存器都位于trapframe中，因此需要整体复制，
+可以在proc中设置一个alarm_trapframe，用于存储相应的寄存器信息，以便于恢复。
+当发生时钟中断的时候，需要复制trapframe到alarm_trapframe中，当执行sigreturn函数的时候，需要恢复trapframe。
+- 同样的，为了防止处理函数还没有结束就再次调用，需要在proc中设置一个in_alarming，0表示没有调用处理函数，可以执行处理函数。
+当发生时钟中断的时候，需要设置in_alarming=1，当执行sigreturn函数的时候，in_alarming=0，表示处理函数执行完毕。
+```c
+uint64 sys_sigreturn(void){
+ 	struct proc*p=myproc();
+  	memmove(p->trapframe,p->alarm_trapframe,sizeof(struct trapframe));
+  	p->in_alarming=0;
+	return 0;
+}
+```
+```c
+ if(which_dev == 2){
+    p->elapsed_ticks++;
+    if(p->elapsed_ticks>p->a_intvl&&p->a_intvl>0&&p->in_alarming==0){
+        memmove(p->alarm_trapframe,p->trapframe,sizeof(struct trapframe));
+        p->trapframe->epc=(uint64)p->handler;
+    	p->elapsed_ticks=0;
+    	p->in_alarming=1;
+
+    }
+```
+- 在进程初始化的时候，或者释放的时候，需要对新增的成员进行处理，模仿其他成员的处理方式即可。
+```c
+In allocproc:
+// Allocate a alarm_trapframe page.
+  if((p->alarm_trapframe = (struct trapframe *)kalloc()) == 0){
+    release(&p->lock);
+    return 0;
+  }
+In freeproc:
+if(p->alarm_trapframe)
+    kfree((void*)p->alarm_trapframe);
+```
+其他新增变量设置为0就可以了。
+
+以下是实验结果：
+![2df33296a0ca6236cdf12d7481a155e4](https://github.com/VictorHuu/XV6LabTJ/assets/103842499/ce6de1d9-0a5a-4872-99f9-b2149cfcedd1)
 
