@@ -17,7 +17,7 @@ struct context {
   uint64 s10;
   uint64 s11;
 };
-
+typedef void(*AlarmFunc) (void);
 // Per-CPU state.
 struct cpu {
   struct proc *proc;          // The process running on this cpu, or null.
@@ -93,14 +93,19 @@ struct proc {
   int killed;                  // If non-zero, have been killed
   int xstate;                  // Exit status to be returned to parent's wait
   int pid;                     // Process ID
-
+  int in_alarming;		//1 in 0 not in
+  
   // these are private to the process, so p->lock need not be held.
   uint64 kstack;               // Virtual address of kernel stack
   uint64 sz;                   // Size of process memory (bytes)
   pagetable_t pagetable;       // User page table
   struct trapframe *trapframe; // data page for trampoline.S
+  struct trapframe *alarm_trapframe;
   struct context context;      // swtch() here to run process
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
+  int a_intvl;			//Alarm interval
+  AlarmFunc handler;		//Invoker Handler
+  int elapsed_ticks;		//number of ticks have passed since the last call (or are left until the next call) to a process's alarm handler
   char name[16];               // Process name (debugging)
 };

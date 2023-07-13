@@ -6,7 +6,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
-
+typedef void(*AlarmFunc) (void);
 uint64
 sys_exit(void)
 {
@@ -28,7 +28,26 @@ sys_fork(void)
 {
   return fork();
 }
-
+uint64 sys_sigreturn(void){
+ 	struct proc*p=myproc();
+  	memmove(p->trapframe,p->alarm_trapframe,sizeof(struct trapframe));
+  	p->in_alarming=0;
+	return 0;
+}
+uint64 sys_sigalarm(void){
+	int ticks;
+	uint64 fn;
+	struct proc* p=myproc();
+	//printf("In sys_sigalarm!\n");
+	if(argint(0,&ticks)<0)
+		return -1;
+	if(argaddr(1,&fn)<0)
+		return -1;
+	p->a_intvl=ticks;
+	//printf("In addr of fn is%p!\n",fn);
+	p->handler=(AlarmFunc)fn;
+	return 0;
+}
 uint64
 sys_wait(void)
 {
