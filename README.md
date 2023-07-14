@@ -23,6 +23,8 @@ sys_sbrk(void)
 
 通过在usertests.c的汇编语言中查找，发现是reparent函数在传送sp的s1时发生了trap缺页中断，reparent接受一个结构proc
 ，proc的上下文context用于进程的上下文切换，其中包含s1，因此可以大致判断发生在上下文切换时。
+![29bc05821b6c57bdeabf5485155b6243](https://github.com/VictorHuu/XV6LabTJ/assets/103842499/bc6047ca-561f-4038-a42c-fab3436de916)
+
 ## Lazy allocation (moderate)
 - 根据提示一，可以在usertrap函数中增加r_scause()==15||r_scause()==13条件
 - 根据提示2，获得虚拟地址uint64 va=r_stval();
@@ -60,6 +62,8 @@ if((*pte & PTE_V) == 0){
       continue;
      }
 ```
+![ff5162a6e3ac32269ef12ac11e66e522](https://github.com/VictorHuu/XV6LabTJ/assets/103842499/709ed29c-ac3d-4134-b930-e2feeb1df9c8)
+
 ## Lazytests and Usertests (moderate)
 这个实验主要是对之前代码的复用并注意一些细节：
 
@@ -75,3 +79,7 @@ if(PGROUNDUP(p->trapframe->sp)-1<*ip&&p->sz>*ip)
 
 - 在读写函数进行系统调用时，需要用到argaddr函数来传递指针，如果指针对应的虚拟地址未分配，那么同样需要进行中断处理，这里只需要将va
 设置为argraw获取的指针解引用后的地址即可。
+
+![f91a3047c7a88fa8c07ec6feb7c67430](https://github.com/VictorHuu/XV6LabTJ/assets/103842499/fe4da10f-3240-4837-9808-743ad72b0cd2)
+
+![7a737f36692b7dc1194d6e5d1315a633](https://github.com/VictorHuu/XV6LabTJ/assets/103842499/d825fdcf-9149-4e69-af13-0e1691cc3b61)
