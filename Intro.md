@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # XV6LabTJ
 It's a repository which is a class design of Tongji University about MIT 6.S081 that is going on.
 ## About branches
