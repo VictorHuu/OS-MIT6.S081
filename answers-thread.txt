@@ -1,0 +1,2 @@
+	Because when 2 threads execute function insert() simultaneously,maybe some of the thread haven't gone through the function,while the other have walked into,then the scenario of 'lost update' happened ,which means the new item inserted on the list maybe substituted by the next incoming thread,so that the former data has lost.
+	As for the scenario that there's only 1 thread,it's not necessary to worry about the above issue.
