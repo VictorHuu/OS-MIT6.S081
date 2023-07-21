@@ -95,7 +95,7 @@ void* cowalloc(pagetable_t pagetable, uint64 va) {
 
   pte_t* pte = walk(pagetable, va, 0); 
 
-  if(krefcnt((char*)pa) == 1) {//Only 1 reference
+  if(get_refcnt((char*)pa) == 1) {//Only 1 reference
     *pte |= PTE_W;
     *pte &= ~PTE_COW;
     return (void*)pa;
