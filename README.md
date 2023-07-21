@@ -107,5 +107,5 @@ if(copyout(p->pagetable, fdarray, (char*)&fd0, sizeof(fd0)) < 0 ||
 ```
 如果是COW页，那么就用cowalloc分配物理地址，否则用walkaddr即可。
 最后，usertests全部通过。
+![57573b0c821a13880b2a2f742e5d8b04](https://github.com/VictorHuu/XV6LabTJ/assets/103842499/13f9cefa-ece2-4f3c-8285-2534a308e9ce)
 
-![img](file:///D:\QQFile\2364190778\Image\C2C\57573b0c821a13880b2a2f742e5d8b04.JPG)
