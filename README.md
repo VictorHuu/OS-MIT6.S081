@@ -29,4 +29,3 @@ thread_switch不存储PC，而存储RA的值，是调用该函数的地址，结
 [Barrier实验代码记录](https://github.com/VictorHuu/ClassDesign-MIT6.S081Fork/commit/05d651bd500d31bf9500382bd8278c03afec862a)
 
 ## 实验结果截图
-![ScreenshotFortheLabThreads](https://github.com/VictorHuu/ClassDesign-MIT6.S081Fork/assets/103842499/baa2494c-ff8b-4cac-88b9-7efe047cfe43)
