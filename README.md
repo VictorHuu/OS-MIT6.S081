@@ -68,3 +68,6 @@ acquire(&tickslock);
 
 [Buffer Cache中对代码的修改记录](https://github.com/VictorHuu/ClassDesign-MIT6.S081Fork/commit/e65aee001dd7b91ad717b45606b7b75771ef7837)
 
+## 通过提交截图
+![image](https://github.com/VictorHuu/ClassDesign-MIT6.S081Fork/assets/103842499/55e03a94-01a5-4731-bb2b-11414cf7b906)
+
