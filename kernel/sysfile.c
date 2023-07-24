@@ -34,6 +34,51 @@ argfd(int n, int *pfd, struct file **pf)
     *pf = f;
   return 0;
 }
+uint64
+sys_munmap(void) {
+  uint64 addr;
+  int length;
+  if(argaddr(0, &addr) < 0 || argint(1, &length) < 0)
+    return -1;
+
+  int i;
+  struct proc* p = myproc();
+  for(i = 0; i < NVMA; ++i) {
+    if(p->vmas[i].used && p->vmas[i].len >= length) {
+      // 根据提示，munmap的地址范围只能是
+      // 1. 起始位置
+      if(p->vmas[i].addr == addr) {
+        p->vmas[i].addr += length;
+        p->vmas[i].len -= length;
+        break;
+      }
+      // 2. 结束位置
+      if(addr + length == p->vmas[i].addr + p->vmas[i].len) {
+        p->vmas[i].len -= length;
+        break;
+      }
+    }
+  }
+  if(i == NVMA)
+    return -1;
+
+  // 将MAP_SHARED页面写回文件系统
+  if(p->vmas[i].flags == MAP_SHARED && (p->vmas[i].prot & PROT_WRITE) != 0) {
+    filewrite(p->vmas[i].vfile, addr, length);
+  }
+
+  // 判断此页面是否存在映射
+  uvmunmap(p->pagetable, addr, length / PGSIZE, 1);
+
+
+  // 当前VMA中全部映射都被取消
+  if(p->vmas[i].len == 0) {
+    fileclose(p->vmas[i].vfile);
+    p->vmas[i].used = 0;
+  }
+
+  return 0;
+}
 #ifndef VMAERR
 #define ERR 0xffffffffffffffff 
 #endif

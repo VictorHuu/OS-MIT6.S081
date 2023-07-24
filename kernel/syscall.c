@@ -53,10 +53,6 @@ argraw(int n)
   return -1;
 }
 
-uint64
-sys_munmap(void) {
-	return -1;
-}
 // Fetch the nth 32-bit system call argument.
 int
 argint(int n, int *ip)
