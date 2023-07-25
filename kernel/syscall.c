@@ -6,7 +6,7 @@
 #include "proc.h"
 #include "syscall.h"
 #include "defs.h"
-
+#include "fcntl.h"
 // Fetch the uint64 at addr from the current process.
 int
 fetchaddr(uint64 addr, uint64 *ip)
@@ -52,10 +52,7 @@ argraw(int n)
   panic("argraw");
   return -1;
 }
-uint64
-sys_mmap(void) {
-	return -1;
-}
+
 uint64
 sys_munmap(void) {
 	return -1;

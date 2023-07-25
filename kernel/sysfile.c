@@ -34,7 +34,48 @@ argfd(int n, int *pfd, struct file **pf)
     *pf = f;
   return 0;
 }
-
+#ifndef VMAERR
+#define ERR 0xffffffffffffffff 
+#endif
+uint64
+sys_mmap(void) {
+	uint64 addr;
+	int length;
+	int prot;
+	int flags;
+	int fd;
+	struct file* vfile;
+	int offset;
+	if(argaddr(0,&addr)==-1||argint(1,&length)==-1||argint(2,&prot)||
+			argint(3,&flags)==-1||argfd(4,&fd,&vfile)==-1||
+			argint(5,&offset)==-1)
+		return ERR;
+	if(addr!=0||offset!=0||length<0)
+		return ERR;
+	if(vfile->writable==0&&(prot&PROT_WRITE)!=0&&flags==MAP_SHARED)
+		return ERR;
+	struct proc* p=myproc();
+	if(p->sz+length>MAXVA)
+		return ERR;
+	for(int i=0;i<NVMA;i++){
+		if(p->vmas[i].used==0){
+			p->vmas[i].used = 1;
+      			p->vmas[i].addr = p->sz;
+      			p->vmas[i].len = length;
+      			p->vmas[i].flags = flags;
+      			p->vmas[i].prot = prot;
+      			p->vmas[i].vfile = vfile;
+      			p->vmas[i].vfd = fd;
+      			p->vmas[i].offset = offset;
+			filedup(vfile);
+			p->sz+=length;
+			return p->vmas[i].addr;
+		}
+	
+	}
+	return ERR;
+		
+}
 // Allocate a file descriptor for the given file.
 // Takes over file reference from caller on success.
 static int
