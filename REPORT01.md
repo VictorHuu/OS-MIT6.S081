@@ -1,5 +1,7 @@
 # Lab: mmap (hard)
 ## 基本系统调用的配置
+[提交记录](https://github.com/VictorHuu/ClassDesign-MIT6.S081Fork/commit/6f34eaa6db0029b15964510bc27ff1f963f567ca)
+
 在此简单说明，对于一个系统调用sys_xxx，需要：
 
 1. 在syscall.c或sysfile.c中添加函数sys_xxx的定义。
@@ -9,6 +11,8 @@
 5. 在usys.pl中添加对应函数的入口,entry("xxx")。
 
 ## 实现mmap以及对应的函数与数据结构
+[提交记录](https://github.com/VictorHuu/ClassDesign-MIT6.S081Fork/commit/f06d1f08d44fb8cd3b4e416ed62326006f5f3439)
+
 1. 首先需要设计VMA对应的数据结构，参考map函数的声明
 ```c
 void *mmap(void *addr, size_t length, int prot, int flags,
@@ -39,3 +43,18 @@ int mmap_handler(int va, int cause);
 
 如果无法读取，那么释放文件锁与分配的物理页，否则不需要释放分配的物理页。之后只需要将获取的pa与函数中
 的va建立映射关系就可以了，建立失败释放相应物理空间即可。
+
+## 实现munmap以及对应的函数与数据结构
+[提交记录](https://github.com/VictorHuu/ClassDesign-MIT6.S081Fork/commit/730cc55a8f67835ea67bb3bd0ae8a8d23b301da4)
+
+1. 首先实现munmap函数：
+- 首先读取参数addr与length。
+- 如果有VMA项的起始位置或结束位置匹配的话，那么该VMA项符合条件。
+- 如果该项对应的页面是MAP_SHARED，那么应该写回文件系统。
+- 接触该页面的潜在映射。
+- 如果该VMA项的虚拟页面长度为0，那么关闭文件，将该项标记为未使用。
+2. 在fork与exit中进行相应的修改：fork中子进程复制父进程的虚拟内存区域，exit中清除这些VMA项。
+3. 由于该实验采用懒分配，因此仿照lazy实验，如果在uvmunmap与uvmcopy中遇到无效页，继续循环即可。
+
+以下是实验结果截图：
+![mmapscorefull](https://github.com/VictorHuu/ClassDesign-MIT6.S081Fork/assets/103842499/810eae1e-121a-4bc7-a529-9622ce909561)
