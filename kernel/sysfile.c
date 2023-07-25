@@ -45,14 +45,14 @@ sys_munmap(void) {
   struct proc* p = myproc();
   for(i = 0; i < NVMA; ++i) {
     if(p->vmas[i].used && p->vmas[i].len >= length) {
-      // 根据提示，munmap的地址范围只能是
-      // 1. 起始位置
+      // According to the hint,the interval of vma
+      //must start with
       if(p->vmas[i].addr == addr) {
         p->vmas[i].addr += length;
         p->vmas[i].len -= length;
         break;
       }
-      // 2. 结束位置
+      // end with
       if(addr + length == p->vmas[i].addr + p->vmas[i].len) {
         p->vmas[i].len -= length;
         break;
@@ -62,16 +62,16 @@ sys_munmap(void) {
   if(i == NVMA)
     return -1;
 
-  // 将MAP_SHARED页面写回文件系统
+  // write back the page which is MAP_SHARED
   if(p->vmas[i].flags == MAP_SHARED && (p->vmas[i].prot & PROT_WRITE) != 0) {
     filewrite(p->vmas[i].vfile, addr, length);
   }
 
-  // 判断此页面是否存在映射
+  // Judge where there's mapping with the page
   uvmunmap(p->pagetable, addr, length / PGSIZE, 1);
 
 
-  // 当前VMA中全部映射都被取消
+  // Undo the mapping of vma_i
   if(p->vmas[i].len == 0) {
     fileclose(p->vmas[i].vfile);
     p->vmas[i].used = 0;
