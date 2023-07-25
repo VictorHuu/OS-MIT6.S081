@@ -55,3 +55,6 @@ int mmap_handler(int va, int cause);
 - 如果该VMA项的虚拟页面长度为0，那么关闭文件，将该项标记为未使用。
 2. 在fork与exit中进行相应的修改：fork中子进程复制父进程的虚拟内存区域，exit中清除这些VMA项。
 3. 由于该实验采用懒分配，因此仿照lazy实验，如果在uvmunmap与uvmcopy中遇到无效页，继续循环即可。
+
+以下是实验结果截图：
+![mmapscorefull](https://github.com/VictorHuu/ClassDesign-MIT6.S081Fork/assets/103842499/810eae1e-121a-4bc7-a529-9622ce909561)
