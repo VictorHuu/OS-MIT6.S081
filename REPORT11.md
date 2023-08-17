@@ -26,8 +26,9 @@
 
 总之，这段代码的核心思想是不断检查E1000的接收队列，当有新的数据包到达时，为其创建相应的 mbuf，将其传递给网络栈，然后准备好接收下一个数据包。这样，驱动程序可以高效地处理从E1000接收到的数据包。
 
+## 截图
 
-
+![GradeNet](/media/victor/Data/Desktop/GitRepo/xv6-labs-2020-net/GradeNet.png)
 
 
 
