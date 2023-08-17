@@ -1,13 +1,92 @@
-# XV6LabTJ
-It's a repository which is a class design of Tongji University about MIT 6.S081 that is going on.
-## About branches
-There'll be 12 branches in total,namely master,util,syscall,mmap and so on,and the master branch is the
-default ,which will be regarded as the final branch that will be released!
-## Resources
-https://pdos.csail.mit.edu/6.828/2020/schedule.html
-## Collaboration
-- You can fork my repository and modify it then create a pull request
-- You can issue
-......
-## Declaration
-The program is in progress and will be refined and refined again!
+# Lab util
+## Sleep
+(提交记录)[https://github.com/VictorHuu/ClassDesign-MIT6.S081Fork/commit/91c37ee111bafd3a2ad7ed9bf59dc86c79ed45fd#diff-b4b6c70bc5b5beb26afd3147e03282723b971261f1e1659cd0d77a3b6c07d99b]
+这个小实验很简单，但先熟悉一下main如何将命令行中的参数传递到程序当中: argc表示参数的个数，argv为参数数组，但每个参数都是字符串形式。
+
+- 将字符串转换为整数形式，如果转换失败或者整数为负数则打印失败信息 。然后调用系统调用sleep函数即可。
+```c
+int main(int argc,char* argv[]){
+	if(argc<=1)
+		fprintf(2,"usage:sleep [user-specified number of ticks]\n");
+	int puticks=atoi(argv[1]);//user-specified No. of ticks
+	char* message="nothing happens to a little while\n";
+	printf(message);
+	sleep(puticks);
+	exit(0);
+}
+```
+## Pingpong
+- 这个实验应该是要熟悉fork调用，明白子进程与父进程的关系。
+- 用pipe创建管道，0为读，1为写，要注意读写操作中写操作的原子性，否则会出现一堆乱码。
+- 可以不用在开始时为父子分别创建读写管道，而是利用dup函数复制管道：
+```c
+if(fork()==0){
+		int new_fd=dup(pipefd[0]);
+		read(new_fd,buffer,sizeof(buffer));
+		printf("%d:received %s\n",getpid(),buffer);
+		close(new_fd);
+		memset(buffer,0,sizeof(buffer));
+		write(pipefd[1],"pong",4);
+		close(pipefd[1]);
+		exit(0);
+	}
+```
+可以看出，子进程复制读管道后读取数据，再关闭读取管道。
+
+要注意在每次读操作或写操作后迅速关闭相应操作的管道，保证每个操作的原子性。
+## Prime
+这个实验实现了使用管道和埃氏法来并行计算素数的程序。主要思想是通过管道将数据从一个进程传递到另一个进程，每个进程负责检查和筛选一部分数字。
+
+下面逐步解释这段代码的主要部分：
+
+1. get_prime 函数：该函数从左侧管道读取一个整数，如果成功读取并返回，就会输出这个整数作为一个素数。
+
+2. get_rest 函数：这个函数从左侧管道读取数据，然后将不能被 first 整除的数据写入右侧管道。它的目的是将左侧管道中的非素数数据进行筛选，只留下能被 first 整除的数据。
+
+3. sieve 函数：主要的埃拉托斯特尼筛法实现。首先从左侧管道读取一个素数（即第一个素数），然后创建一个新的管道（右侧管道），将 sieve 函数递归地调用在这个新管道上，以继续进行筛选。在当前管道中，调用 get_rest 函数来将不能被第一个素数整除的数据发送到右侧管道中。
+
+4. main函数：主函数首先创建一个管道 p。然后创建一个子进程，进入 sieve 函数。父进程会循环将数字 2 到 35 写入管道 p，然后关闭管道的写入端，等待子进程结束。
+## Xargs
+xargs 命令通常用于从标准输入读取一系列参数，并将这些参数作为命令的参数传递给其他命令来执行。
+
+状态机和字符类型判断：代码中使用了一个状态机来处理从标准输入读取的字符流。
+- get_char_type 函数用于判断当前字符的类型，是空格、普通字符还是换行符。
+- transform_state 函数根据当前状态和字符类型来决定下一个状态。
+
+参数处理：代码使用 x_argv 数组来存储参数，类似于 argv 数组。
+- arg_beg 和 arg_end 用于跟踪当前参数的开始和结束位置，arg_cnt 记录当前已经处理的参数数量。
+
+循环处理字符：代码使用一个循环从标准输入中读取字符，并根据状态机的状态和字符类型来决定下一步的操作。
+
+1. 在 S_WAIT 状态下，当遇到空格字符，会将当前参数的开始位置 arg_beg 向后移动，并等待下一个参数。
+2. 在 S_ARG_END 状态下，表示当前参数结束，将当前参数的指针添加到 x_argv 数组中，并更新 arg_cnt 和 arg_beg。
+3. 在 S_ARG_LINE_END 状态下，类似于 S_ARG_END，但不会将结束的参数加入 x_argv 数组，用于处理换行符后续的参数。
+4. 在 S_LINE_END 状态下，表示一行的结束，会创建子进程并调用 exec 函数来执行传递的命令，同时清除参数数组并等待子进程结束。
+
+xargs 命令主体：主函数开始通过检查参数数量，确保不超过最大值。然后定义了一个字符数组 lines 用于存储输入字符流，以及一些必要的变量。
+
+子进程执行命令：在 S_LINE_END 状态下，代码会创建一个子进程并使用 exec 函数来执行指定的命令，即传递给 xargs 的第一个参数。
+
+清理和退出：在子进程执行完命令后，通过 wait 函数等待子进程结束，然后重置参数数组，并继续读取下一行参数。
+## Find
+1. ```fmtname``` 会将提取到的文件名进行格式化，不足部分会填充空格。getname 则只是返回提取的文件名。
+
+2. ```get_type``` 函数：这个函数用于获取文件的类型。它打开给定路径的文件，获取其状态信息（stat），并返回文件的类型。
+
+3. ```find``` 函数：这个函数是实现 find 命令核心逻辑的部分。
+
+- 首先，它打开指定的路径，获取路径的状态信息（类型、大小等）。
+根据文件类型的不同，采取不同的处理策略：
+1. 对于普通文件和设备文件，直接打印路径。
+2. 对于目录文件，进入该目录，遍历目录中的所有项。
+3. 在遍历目录项时，判断如果是当前目录 . 或上级目录 ..，则跳过。
+4. 对于非目录项，根据提供的文件名模式进行匹配，如果匹配成功，则打印路径。
+5. 对于目录项，递归调用 find 函数，进一步遍历该目录。
+
+主函数：主函数接受命令行参数，其中每两个参数被视为一组，即目录路径和文件名模式。如果提供了多组目录和模式，会在处理每组前输出组名。然后，主函数调用 find 函数来查找匹配的文件。
+
+在遍历目录时，需要注意以下方面：
+
+1. **跳过 . 和 .. 目录**：这两个特殊目录代表当前目录和上级目录，一般不需要包含在 find 结果中。
+2. **递归遍历**：当遇到目录时，递归地进入该目录，继续遍历其中的文件和子目录。这样可以覆盖整个目录树。
+3. **匹配文件名模式**：在遍历目录项时，对于文件名模式的匹配通常使用字符串比较函数（例如 strcmp）来判断是否匹配。
