@@ -80,3 +80,7 @@ struct buf *bp1;
 6. 如果新的 inode 仍然是符号链接类型，继续循环，进行下一次链接跟随。
 7. 如果循环结束后，新的 inode 不再是符号链接类型，则继续执行后续操作。
 8. 如果循环结束时，新的 inode 仍然是符号链接类型，则解锁新的 inode，结束文件系统操作并返回错误。
+
+## 截图
+![37c7cffa3cb58c09cab468a89ab36cac](https://github.com/VictorHuu/ClassDesign-MIT6.S081Fork/assets/103842499/719587db-dc39-4c21-b8fc-6b9ed7409887)
+
