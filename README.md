@@ -1,6 +1,7 @@
 # Lab util
 ## Sleep
 (提交记录)[https://github.com/VictorHuu/ClassDesign-MIT6.S081Fork/commit/91c37ee111bafd3a2ad7ed9bf59dc86c79ed45fd#diff-b4b6c70bc5b5beb26afd3147e03282723b971261f1e1659cd0d77a3b6c07d99b]
+
 这个小实验很简单，但先熟悉一下main如何将命令行中的参数传递到程序当中: argc表示参数的个数，argv为参数数组，但每个参数都是字符串形式。
 
 - 将字符串转换为整数形式，如果转换失败或者整数为负数则打印失败信息 。然后调用系统调用sleep函数即可。
