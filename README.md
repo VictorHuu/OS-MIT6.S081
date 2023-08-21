@@ -28,7 +28,7 @@
 
 ## 截图
 
-![GradeNet](/media/victor/Data/Desktop/GitRepo/xv6-labs-2020-net/GradeNet.png)
+![GradeNet](https://github.com/VictorHuu/OS-MIT6.S081/blob/net/GradeNet.png)
 
 
 
